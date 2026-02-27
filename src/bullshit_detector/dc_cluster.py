@@ -13,93 +13,164 @@ Repository: mycarta/Niccoli_Speidel_2018_Geoconvention
 Uses Hunt (2013) dataset (same as Notebooks A/B).
 """
 
-import dcor
 import numpy as np
 
 
-def dist_corr(x, y, pval: bool = True, nruns: int = 2000) -> tuple:
-    """Distance correlation with optional permutation p-value.
+def dist_corr(x, y) -> float:
+    """Distance correlation between two vectors.
+
+    Thin wrapper around ``dcor.distance_correlation``. Unlike Pearson r,
+    distance correlation equals zero if and only if the variables are
+    statistically independent (for continuous distributions).
 
     Parameters
     ----------
     x, y : array-like
-        Data vectors.
-    pval : bool
-        If True, also compute permutation p-value. Default True.
-    nruns : int
-        Number of permutation resamples. Default 2000.
+        Data vectors of equal length.
 
     Returns
     -------
-    tuple
-        (dc, p_value) if pval=True, else just dc (float).
+    float
+        Distance correlation in [0, 1].
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> x = np.array([1., 2., 3., 4., 5.])
+    >>> dist_corr(x, x)  # perfect dependence
+    1.0
+    >>> dist_corr(x, -x)  # monotone inverse still dependent
+    1.0
 
     References
     ----------
-    Székely et al. (2007).
+    Székely et al. (2007). Measuring and testing dependence by correlation
+    of distances. Annals of Statistics, 35(6), 2769–2794.
     Notebook F: dist_corr() function.
     """
-    raise NotImplementedError("TODO: Extract from Notebook F")
+    import dcor
+
+    return float(dcor.distance_correlation(np.asarray(x, dtype=float),
+                                           np.asarray(y, dtype=float)))
 
 
-def dc_matrix(data) -> "pd.DataFrame":
-    """Compute pairwise distance correlation matrix for all columns.
+def dc_matrix(df) -> "pd.DataFrame":
+    """Pairwise distance correlation matrix for all columns of a DataFrame.
+
+    Computes the upper triangle only and mirrors it to avoid redundant
+    computation.  The diagonal is set to 1.0.
 
     Parameters
     ----------
-    data : pd.DataFrame
-        DataFrame where each column is a variable.
+    df : pd.DataFrame
+        DataFrame where each column is a variable (rows are observations).
 
     Returns
     -------
     pd.DataFrame
-        Square matrix of distance correlations.
+        Square symmetric DataFrame of shape (n_cols × n_cols) with
+        column/index names matching ``df.columns`` and 1.0 on the diagonal.
 
-    Notes
-    -----
-    Uses the lambda-based approach from Notebook F:
-        data.apply(lambda col1: data.apply(lambda col2: dcor.distance_correlation(col1, col2)))
+    Examples
+    --------
+    >>> import pandas as pd, numpy as np
+    >>> rng = np.random.default_rng(0)
+    >>> df = pd.DataFrame({'a': rng.normal(size=30), 'b': rng.normal(size=30)})
+    >>> m = dc_matrix(df)
+    >>> m.shape
+    (2, 2)
+    >>> float(m.loc['a', 'a'])
+    1.0
 
     References
     ----------
-    Notebook F: blog post (see module docstring for URL).
+    Notebook F / blog post:
+    https://mycartablog.com/2019/04/10/data-exploration-in-python-distance-correlation-and-variable-clustering/
     """
-    raise NotImplementedError("TODO: Extract from Notebook F")
+    import pandas as pd
+
+    cols = list(df.columns)
+    n = len(cols)
+    mat = np.ones((n, n))
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            val = dist_corr(df.iloc[:, i].values, df.iloc[:, j].values)
+            mat[i, j] = val
+            mat[j, i] = val
+
+    return pd.DataFrame(mat, index=cols, columns=cols)
 
 
-def effective_k(data, method: str = "complete") -> int:
-    """Estimate effective number of independent variable groups.
+def effective_k(df, threshold: float = 0.5, method: str = "complete") -> dict:
+    """Estimate effective number of independent variable groups via DC clustering.
 
-    Applies hierarchical clustering to the distance correlation matrix
-    and returns the number of clusters, which serves as effective k
-    for the P_spurious calculation.
+    Builds the pairwise distance correlation matrix, converts it to a
+    distance matrix (``1 − DC``), applies hierarchical linkage, and cuts
+    the dendrogram at ``threshold`` to count clusters.  The cluster count
+    is the *effective k* to use in ``P_spurious`` instead of the raw
+    variable count.
 
     Parameters
     ----------
-    data : pd.DataFrame
+    df : pd.DataFrame
         DataFrame where each column is a variable.
+    threshold : float
+        Distance threshold for ``scipy.cluster.hierarchy.fcluster``
+        (criterion ``'distance'``).  Default 0.5.
     method : str
-        Linkage method for hierarchical clustering. Default "complete".
+        Linkage method passed to ``scipy.cluster.hierarchy.linkage``.
+        Default ``'complete'``.
 
     Returns
     -------
-    int
-        Number of independent variable clusters.
+    dict
+        n_clusters : int — effective k (number of independent groups)
+        cluster_labels : ndarray — cluster assignment per column (1-based)
+        dc_matrix : pd.DataFrame — pairwise DC matrix
+        dendrogram_data : dict — output of
+            ``scipy.cluster.hierarchy.dendrogram(..., no_plot=True)``
 
     Detection heuristic
     -------------------
     If a paper reports k "independent" predictors but DC clustering
-    groups them into fewer clusters, the effective k for P_spurious
-    is the cluster count, not the reported variable count.
+    groups them into fewer clusters, use the cluster count (not k) when
+    calling ``P_spurious``.
 
-    Requires ``seaborn`` and ``scipy`` (install with
-    ``pip install bullshit-detector[full]``).
+    Examples
+    --------
+    >>> import pandas as pd, numpy as np
+    >>> rng = np.random.default_rng(0)
+    >>> x = rng.normal(size=40)
+    >>> df = pd.DataFrame({'a': x, 'b': x * 2, 'c': rng.normal(size=40)})
+    >>> result = effective_k(df)
+    >>> result['n_clusters']  # a and b are perfectly correlated → 2 groups
+    2
 
     References
     ----------
-    Notebook F. Uses seaborn.clustermap internally.
+    Notebook F / blog post (see module docstring).
+    Niccoli & Speidel (2018), GeoConvention.
     """
-    raise NotImplementedError(
-        "TODO: Implement DC matrix → hierarchical clustering → cluster count. "
-        "See Notebook F for approach using sns.clustermap + dendrogram_col.reordered_ind."
-    )
+    from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
+
+    dcm = dc_matrix(df)
+
+    # Convert correlation to distance; clip to avoid tiny negatives from float arithmetic
+    dist_mat = np.clip(1.0 - dcm.values, 0.0, None)
+    np.fill_diagonal(dist_mat, 0.0)
+
+    # Condense upper triangle for linkage
+    n = dist_mat.shape[0]
+    condensed = dist_mat[np.triu_indices(n, k=1)]
+
+    Z = linkage(condensed, method=method)
+    labels = fcluster(Z, t=threshold, criterion="distance")
+    dend = dendrogram(Z, no_plot=True)
+
+    return {
+        "n_clusters": int(labels.max()),
+        "cluster_labels": labels,
+        "dc_matrix": dcm,
+        "dendrogram_data": dend,
+    }
