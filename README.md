@@ -79,6 +79,12 @@ This project stands on the shoulders of:
 
 The `skills/` directory contains detection heuristics and decision trees for each module. If you're a coding assistant (Copilot, Claude Code, etc.), read `skills/OVERVIEW.md` first.
 
+## Acknowledgments
+
+**Kristin Sainani** — her paper "How to Be a Statistical Detective" (*PM&R*, 2020, 12(2):211–215, DOI: [10.1002/pmrj.12305](https://doi.org/10.1002/pmrj.12305)) inspired the Tier 1 arithmetic consistency approach and the overall "statistical detective" framing of this package. The `p_checker` module's pedagogical structure follows her framework of treating statistical anomalies as clues that warrant further investigation.
+
+**Thomas Speidel** — his GeoConvention 2018 R notebook, *Data Science Tools for Petroleum Exploration and Production*, provided the methodology for the power analysis and redundancy modules (Tier 2). The original GeoConvention 2018 presentation was a collaboration between Matteo Niccoli and Thomas Speidel; Speidel's R implementations of power analysis and variable redundancy (`Hmisc::redun`), applied to the Hunt (2013) 21-well dataset, were translated into the Python `power` and `redundancy` modules in this package.
+
 ## License
 
 Apache-2.0. The optional `statcheck` dependency is GPL-3.0.
