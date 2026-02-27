@@ -16,9 +16,12 @@ src/bullshit_detector.egg-info/SOURCES.txt
 src/bullshit_detector.egg-info/dependency_links.txt
 src/bullshit_detector.egg-info/requires.txt
 src/bullshit_detector.egg-info/top_level.txt
+tests/test_dc_cluster.py
 tests/test_grimmer.py
+tests/test_leverage.py
 tests/test_p_checker.py
 tests/test_paper_screening.py
 tests/test_power.py
 tests/test_redundancy.py
+tests/test_reproducibility.py
 tests/test_spurious.py

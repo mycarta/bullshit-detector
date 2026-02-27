@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: bullshit-detector
-Version: 0.1.0
+Version: 0.1.1
 Summary: Statistical detection tools for screening published research
 Author-email: Matteo Niccoli <matteo@mycarta.ca>
 License: Apache-2.0
@@ -60,43 +60,40 @@ pip install bullshit-detector[batch]   # + statcheck for PDF batch scanning (GPL
 pip install bullshit-detector[dev]     # + pytest for development
 ```
 
-## Quick start
+## Quick Start
 
+### Is the reported p-value correct?
 ```python
 from bullshit_detector.p_checker import check_p_value
-from bullshit_detector.spurious import P_spurious, r_crit, conf_int
-from bullshit_detector.grimmer import a_grimmer
-from bullshit_detector.paper_screening import check_journal, check_retraction
-from bullshit_detector.power import required_n, achieved_power
-from bullshit_detector.redundancy import redundancy_analysis
 
-# Tier 0: Is the journal legitimate?
-check_journal("Diabetes, Metabolic Syndrome, and Obesity")
-
-# Tier 0: Has the paper been retracted?
-check_retraction("10.2147/DMSO.S27665")
-
-# Tier 1: Does the reported p-value match the test statistic?
-check_p_value('t', 2.20, 28, reported_p=0.04)
-
-# Tier 1: Is this mean possible from integer data?
-a_grimmer(n=18, mean=3.44, sd=2.47)  # → "GRIMMER inconsistent"
-
-# Tier 2: What's the probability this correlation is spurious?
-P_spurious(0.6, 5, 10)  # r=0.6, 5 wells, 10 attributes → ~96%
-
-# Tier 2: What's the critical r for this sample size?
-r_crit(21)  # → ~0.433
-
-# Tier 2: What's the CI for this correlation?
-conf_int(0.73, 9)  # → (~0.13, ~0.94) — very broad!
-
-# Tier 2: Was this study adequately powered?
-achieved_power(d=16, sd1=16, sd2=12, n_per_group=11, alpha=0.10)
-
-# Tier 2: How many wells would we need?
-required_n(d=16, sd1=16, sd2=12, alpha=0.10, power=0.80)  # → ~11 per group
+check_p_value("t", 2.20, 28, reported_p=0.04)
+# {'computed_p': 0.0362254847788378, 'reported_p': 0.04,
+#  'consistent': True, 'decision_error': False, ...}
 ```
+
+Reported p=0.04 is consistent with computed p=0.036 — within rounding tolerance.
+
+### Could this correlation be spurious?
+```python
+from bullshit_detector.spurious import P_spurious
+
+# r=0.60, n=5 observations, k=10 predictor variables tested
+P_spurious(0.60, 5, 10)
+# 0.9649622440458044
+```
+
+With r=0.60, n=5 observations, and k=10 variables tested, there is a 96.5% probability this correlation is spurious.
+
+### Has this paper been retracted?
+```python
+from bullshit_detector.paper_screening import check_retraction
+
+check_retraction("10.2147/DMSO.S27665")
+# {'retracted': True, 'corrections': [], 'pubpeer_comments': 0,
+#  'pubpeer_url': 'https://pubpeer.com/publications/10.2147-DMSO.S27665'}
+```
+
+`retracted: True` — the paper behind this DOI has been formally retracted. Do not cite or act on its findings. (This is the Vinson et al. 2012 green coffee extract paper, retracted in 2014 after an FTC investigation.)
 
 ## Intellectual foundations
 
@@ -114,6 +111,12 @@ This project stands on the shoulders of:
 ## For AI assistants
 
 The `skills/` directory contains detection heuristics and decision trees for each module. If you're a coding assistant (Copilot, Claude Code, etc.), read `skills/OVERVIEW.md` first.
+
+## Acknowledgments
+
+**Kristin Sainani** — her paper "How to Be a Statistical Detective" (*PM&R*, 2020, 12(2):211–215, DOI: [10.1002/pmrj.12305](https://doi.org/10.1002/pmrj.12305)) inspired the Tier 1 arithmetic consistency approach and the overall "statistical detective" framing of this package. The `p_checker` module's pedagogical structure follows her framework of treating statistical anomalies as clues that warrant further investigation. More broadly, her detective framing runs through the entire package lineage: it directly inspired Matteo Niccoli's *"Be a geoscience and data science detective"* project ([MyCarta blog](https://mycartablog.com), [GitHub repo](https://github.com/mycarta/Be-a-geoscience-detective), TRANSFORM 2021 lightning talk), which is the primary source for the Tier 3 modules (`leverage.py`, `reproducibility.py`).
+
+**Thomas Speidel** — his GeoConvention 2018 R notebook, *Data Science Tools for Petroleum Exploration and Production*, provided the methodology for the power analysis and redundancy modules (Tier 2). The original GeoConvention 2018 presentation was a collaboration between Matteo Niccoli and Thomas Speidel; Speidel's R implementations of power analysis and variable redundancy (`Hmisc::redun`), applied to the Hunt (2013) 21-well dataset, were translated into the Python `power` and `redundancy` modules in this package.
 
 ## License
 

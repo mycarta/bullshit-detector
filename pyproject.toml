@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bullshit-detector"
-version = "0.1.0"
+version = "0.1.1"
 description = "Statistical detection tools for screening published research"
 readme = "README.md"
 license = {text = "Apache-2.0"}
