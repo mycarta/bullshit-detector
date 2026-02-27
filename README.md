@@ -24,43 +24,39 @@ pip install bullshit-detector[batch]   # + statcheck for PDF batch scanning (GPL
 pip install bullshit-detector[dev]     # + pytest for development
 ```
 
-## Quick start
+## Quick Start
 
+### Is the reported p-value correct?
 ```python
 from bullshit_detector.p_checker import check_p_value
-from bullshit_detector.spurious import P_spurious, r_crit, conf_int
-from bullshit_detector.grimmer import a_grimmer
-from bullshit_detector.paper_screening import check_journal, check_retraction
-from bullshit_detector.power import required_n, achieved_power
-from bullshit_detector.redundancy import redundancy_analysis
 
-# Tier 0: Is the journal legitimate?
-check_journal("Diabetes, Metabolic Syndrome, and Obesity")
-
-# Tier 0: Has the paper been retracted?
-check_retraction("10.2147/DMSO.S27665")
-
-# Tier 1: Does the reported p-value match the test statistic?
-check_p_value('t', 2.20, 28, reported_p=0.04)
-
-# Tier 1: Is this mean possible from integer data?
-a_grimmer(n=18, mean=3.44, sd=2.47)  # → "GRIMMER inconsistent"
-
-# Tier 2: What's the probability this correlation is spurious?
-P_spurious(0.6, 5, 10)  # r=0.6, 5 wells, 10 attributes → ~96%
-
-# Tier 2: What's the critical r for this sample size?
-r_crit(21)  # → ~0.433
-
-# Tier 2: What's the CI for this correlation?
-conf_int(0.73, 9)  # → (~0.13, ~0.94) — very broad!
-
-# Tier 2: Was this study adequately powered?
-achieved_power(d=16, sd1=16, sd2=12, n_per_group=11, alpha=0.10)
-
-# Tier 2: How many wells would we need?
-required_n(d=16, sd1=16, sd2=12, alpha=0.10, power=0.80)  # → ~11 per group
+check_p_value("t", 2.20, 28, reported_p=0.04)
+# {'computed_p': 0.0362254847788378, 'reported_p': 0.04,
+#  'consistent': True, 'decision_error': False, ...}
 ```
+
+Reported p=0.04 is consistent with computed p=0.036 — within rounding tolerance.
+
+### Could this correlation be spurious?
+```python
+from bullshit_detector.spurious import P_spurious
+
+P_spurious(0.60, 5, 10)
+# 0.9649622440458044
+```
+
+With 5 wells and 10 attributes, there's a 96.5% chance a correlation of r=0.60 is spurious.
+
+### Has this paper been retracted?
+```python
+from bullshit_detector.paper_screening import check_retraction
+
+check_retraction("10.2147/DMSO.S27665")
+# {'retracted': True, 'corrections': [], 'pubpeer_comments': 0,
+#  'pubpeer_url': 'https://pubpeer.com/publications/10.2147-DMSO.S27665'}
+```
+
+The green coffee extract paper (Vinson et al. 2012) was retracted in 2014.
 
 ## Intellectual foundations
 
