@@ -46,6 +46,8 @@ P_spurious(0.60, 5, 10)
 # 0.9649622440458044
 ```
 
+With r=0.60, n=5 observations, and k=10 variables tested, there is a 96.5% probability this correlation is spurious.
+
 ### Has this paper been retracted?
 ```python
 from bullshit_detector.paper_screening import check_retraction
@@ -55,7 +57,7 @@ check_retraction("10.2147/DMSO.S27665")
 #  'pubpeer_url': 'https://pubpeer.com/publications/10.2147-DMSO.S27665'}
 ```
 
-The green coffee extract paper (Vinson et al. 2012) was retracted in 2014.
+`retracted: True` — the paper behind this DOI has been formally retracted. Do not cite or act on its findings. (This is the Vinson et al. 2012 green coffee extract paper, retracted in 2014 after an FTC investigation.)
 
 ## Intellectual foundations
 
