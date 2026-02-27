@@ -47,6 +47,8 @@ P_spurious(0.60, 5, 10)
 
 With 5 wells and 10 attributes, there's a 96.5% chance a correlation of r=0.60 is spurious.
 
+Statistics flag the risk — domain knowledge decides the verdict. A physically meaningless attribute that passes r_crit should still be rejected if there's no plausible mechanism. Conversely, a physically justified predictor (e.g., gross pay → production via Darcy's Law) may warrant further investigation even if it falls below the statistical threshold. See examples/hunt_dataset.py for a worked example demonstrating both cases.
+
 ### Has this paper been retracted?
 ```python
 from bullshit_detector.paper_screening import check_retraction
