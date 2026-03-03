@@ -45,6 +45,50 @@ heuristics. Sources: Bergstrom & West (2020), Seifert (2024), Cabanac et al. (20
 - Implication: papers in Springer Nature journals have been screened; papers
   in smaller publishers likely have not. Adjust scrutiny accordingly.
 
+## ML explainability screening (Tier 0)
+
+If the paper uses machine learning to make predictions or classifications,
+check whether the authors report any explainability or interpretability
+analysis. This is a screening check — you are not running SHAP yourself,
+you are checking whether the authors did *anything* to open the black box.
+
+### What to look for:
+
+- Feature importance (any method: SHAP, permutation, impurity-based)
+- Partial dependence or SHAP dependence plots
+- Any discussion of *which* features drive predictions and *why*
+- Physical or domain-based justification for the feature set used
+
+### Red flags:
+
+- ML model reported with accuracy/R² metrics only, no feature importance
+  at all. The model might be fitting noise, and without explainability
+  there is no way to tell from the paper alone.
+- Feature importance reported but not discussed in domain terms. A ranked
+  list of variable names without physical interpretation is decoration,
+  not explanation.
+- Large number of input features with no redundancy analysis. If 30
+  seismic attributes went into a Random Forest with 50 wells, the
+  spurious correlation risk is high regardless of reported accuracy.
+  Route to `spurious.P_spurious()` and `redundancy.redundancy_analysis()`.
+
+### What this does NOT catch:
+
+This is a presence/absence check. A paper can report SHAP and still have
+serious problems — implausible feature importance, SHAP used to claim
+causation, redundant features splitting credit. Those are Tier 3 checks
+covered in `outlier_leverage.md` (SHAP audit section).
+
+### Verdict:
+
+- **PASS** — Explainability analysis present and discussed in domain terms
+- **CAUTION** — Explainability analysis present but superficial (ranked
+  list without interpretation) or feature count is high relative to
+  sample size
+- **FLAG** — No explainability analysis reported for an ML model. Note
+  in audit: "ML predictions reported without interpretability analysis.
+  Cannot assess whether model relies on physically plausible features."
+
 ## References
 
 - Abalkina (2023), identification of papers offered for sale by paper mills
