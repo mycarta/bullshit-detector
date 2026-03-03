@@ -9,7 +9,8 @@ _Last updated: 3 March 2026 (Session 12)_
 
 Source files on `P:\Bullshit detector\` and `/mnt/user-data/outputs/`.
 
-- [ ] `skills/outlier_leverage.md` — SHAP/XAI audit section + ceteris paribus future extensions + new references (Lundberg & Lee 2017, Molnar 2022, Roure & Perez 2025, Lubo-Robles et al. 2022). Copilot prompt: `copilot_prompt_shap_insert.md`
+- [x] `skills/outlier_leverage.md` — SHAP/XAI audit section ✓
+- [x] `paper_screening.md` — ML explainability screening note ✓
 - [ ] All code-backed skill files — add "Not covered" sections declaring blind spots. Copilot prompt ready (see Session 12 transcript). Each agent's scope boundary for SLM architecture.
 
 ## Skill files to fill (currently partial or placeholder)
