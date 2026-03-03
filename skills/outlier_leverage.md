@@ -205,6 +205,155 @@ Paper reports regression results?
    └─ No  → Standard inference concerns apply
 ```
 
+## Explainable AI as audit tool (SHAP, permutation importance)
+
+When a paper (or your own work) reports ML predictions — Random Forest,
+gradient boosting, neural nets — traditional regression diagnostics
+(residual plots, Cook's D) don't apply directly. The model is a black
+box. Explainable AI methods, particularly SHAP (SHapley Additive
+exPlanations), open that box for auditing purposes.
+
+This section tells the auditor what to look for in SHAP output, not
+how to compute it. SHAP is a mature, well-maintained package. The
+bullshit-detector's value add is the *interpretation framework* —
+connecting SHAP results to the statistical red flags caught by other
+modules.
+
+### What SHAP shows
+
+SHAP decomposes each prediction into additive contributions from each
+feature. For a single prediction: how much did each input push the
+prediction above or below the baseline? Across the dataset: which
+features matter most, and how does their effect vary with feature value?
+
+Three SHAP plot types matter for auditing:
+
+- **Summary (beeswarm) plot** — global feature importance ranked by
+  mean |SHAP value|. Shows which features the model relies on and
+  whether the direction of effect makes physical sense.
+- **Waterfall plot** — single-prediction decomposition. Shows exactly
+  which features drove a specific prediction, and by how much. Useful
+  for auditing whether individual predictions are physically defensible
+  (see Roure & Perez 2025 for a geoscience example: SHAP waterfall
+  applied to GR log prediction from seismic attributes).
+- **Dependence plot** — SHAP value for one feature vs. that feature's
+  value, colored by a second feature. This is essentially a ceteris
+  paribus curve: how does the model's output change as one input varies?
+
+### What to look for (red flags)
+
+**Feature importance without physical justification:**
+A feature with no known physical relationship to the target shows high
+SHAP importance. This is the Kalkomey trap made visible. Cross-reference
+against `spurious.P_spurious()` for that sample size and attribute count.
+If P_spurious is high and the top SHAP feature is physically implausible,
+the model has likely learned a coincidence.
+
+Example: In seismic reservoir property prediction, if a geometric
+attribute with no rock physics basis outranks impedance or amplitude,
+the model may be fitting noise. The Hunt dataset synthetic example
+is the extreme case: X_fabricated would show as the most important
+feature in SHAP — and that importance *is* the red flag.
+
+**Non-monotonic or implausible dependence shapes:**
+SHAP dependence plots should show relationships consistent with domain
+knowledge. In a porosity prediction model, acoustic impedance should
+show a negative relationship (higher impedance → lower porosity in
+clastics). If the dependence plot shows the opposite, or a
+non-monotonic zigzag, the model may be fitting artifacts.
+
+Connection to `causal_consistency.md` Check 5 (Concomitant Variation):
+the SHAP dependence plot is a visual dose-response check. If the
+curve is flat everywhere except a narrow region, the claimed effect
+may depend on an outlier cluster or a specific covariate combination.
+
+**Redundant features sharing importance:**
+If several highly correlated features all show moderate SHAP importance,
+the model is splitting credit among collinear inputs. The total effect
+of the underlying physical property is underrepresented by any single
+feature's SHAP rank. Cross-reference with `redundancy.redundancy_analysis()`
+or `dc_cluster.effective_k()` to identify the redundancy structure.
+SHAP interaction values (if computed) can reveal whether the model is
+using different collinear features in different regions of the input
+space — a sign of overfitting to noise.
+
+**Feature importance that contradicts reported variable selection:**
+If the paper claims they selected features carefully but SHAP shows
+that two of the top five features are trivially correlated with each
+other (e.g., P-impedance and density in the same inversion), the
+effective dimensionality is lower than claimed. Feed the SHAP-revealed
+redundancy back into `spurious.P_spurious()` with corrected k.
+
+### Where SHAP fits in the tier system
+
+SHAP is Tier 3 — it requires either raw data and a fitted model, or
+enough information in the paper to reconstruct the analysis. It
+complements:
+
+- `leverage.influence_plot()` — which points drive the fit (data-space
+  view) vs. which features drive predictions (feature-space view)
+- `dc_cluster.effective_k()` — redundancy structure in the predictors,
+  now visible through SHAP's credit allocation
+- `spurious.P_spurious()` — SHAP makes the spurious correlation
+  problem concrete by naming the suspect features
+
+### When SHAP is not the right tool
+
+SHAP explains what a model learned. It does not tell you whether what
+the model learned is true. A model can have perfectly interpretable
+SHAP plots and still be fitting spurious correlations — especially
+when n is small relative to k. SHAP importance is not evidence of
+causation. Always check `spurious.P_spurious()` and `power.achieved_power()`
+before trusting SHAP-based narratives about feature importance.
+
+### Quick decision guide for SHAP audit
+
+```
+Paper reports ML model with feature importance or SHAP?
+│
+├─ Are the top features physically plausible?
+│  ├─ No → Flag: "Dominant feature has no known physical mechanism"
+│  │        Cross-check: spurious.P_spurious(r, n, k)
+│  └─ Yes → Check dependence plot shapes
+│
+├─ Do SHAP dependence plots show sensible relationships?
+│  ├─ Non-monotonic or reversed → Flag: "Feature effect contradicts
+│  │   domain knowledge" — possible overfitting or confounding
+│  └─ Monotonic, correct direction → Lower concern
+│
+├─ Are multiple correlated features sharing importance?
+│  ├─ Yes → Flag: "Redundant features inflate apparent model complexity"
+│  │         Feed effective_k into spurious.P_spurious()
+│  └─ No  → OK
+│
+├─ Is n small relative to number of features?
+│  ├─ n/k < 10 → Flag: "SHAP importance unreliable — model likely
+│  │              overfit. Check spurious.P_spurious() and power."
+│  └─ n/k > 10 → Standard concerns apply
+│
+└─ Does the paper use SHAP to claim causation?
+   ├─ Yes → Flag: "SHAP shows model reliance, not causal effect"
+   │         Route to causal_consistency.md Mill's Methods
+   └─ No  → OK
+```
+
+## Future extensions
+
+- **Ceteris paribus plots** (Molnar, *Interpretable ML*; Kuźba et al.
+  2019) as a complement to SHAP dependence plots. CP plots show how
+  a prediction changes when one feature varies while everything else
+  is held constant — a direct visual check for Mill's Concomitant
+  Variation (Check 5 in `causal_consistency.md`). If the CP curve is
+  flat everywhere except a narrow region, the claimed effect may depend
+  on outliers or a specific covariate combination. Requires raw data
+  or fitted model. Complements `influence_plot()` (which points drive
+  the fit) with how the prediction surface behaves across the full
+  input range.
+- **Permutation feature importance** as a simpler alternative to SHAP
+  when full SHAP computation is too expensive. Same audit logic applies:
+  if the most important feature by permutation has no physical basis,
+  flag it.
+
 ## References
 
 - Davis (1986), *Statistical Methods in the Earth Sciences*, Cambridge
@@ -219,3 +368,17 @@ Paper reports regression results?
   for always plotting your data.)
 - Speidel (2018), GeoConvention R notebook on petroleum dataset
   diagnostics — source material for leverage.py implementation.
+- Lundberg & Lee (2017), "A Unified Approach to Interpreting Model
+  Predictions", NeurIPS 2017. (SHAP: SHapley Additive exPlanations.)
+- Molnar (2022), *Interpretable Machine Learning*, 2nd edition.
+  https://christophm.github.io/interpretable-ml-book/
+  (Chapters on SHAP, permutation importance, feature interaction,
+  ceteris paribus plots.)
+- Roure & Perez (2025), "Maximizing field development through rock
+  physics informed hi-res ML seismic estimates of reservoir properties",
+  GeoConvention 2025. (SHAP waterfall applied to GR log prediction
+  from seismic attributes — good geoscience XAI example.)
+- Lubo-Robles, Devegowda, Jayaram, Bedle, Marfurt & Pranter (2022),
+  "Quantifying the sensitivity of seismic facies classification to
+  seismic attribute selection: An explainable machine-learning study",
+  Interpretation, SE41–SE69.
