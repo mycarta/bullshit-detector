@@ -22,7 +22,7 @@ Source files on `P:\Bullshit detector\` and `/mnt/user-data/outputs/`.
 
 ## New skill files (not yet written)
 
-- [ ] Unsupervised learning critique — cluster reification, distances from centres ignored. Test case: Ahlqvist et al. (2018) diabetes subtype clustering. Reasoning-only agent, no code module needed. From Thomas Speidel's test cases.
+- [x] `unsupervised_learning_critique.md` — cluster reification, centroid vs medoid, stability, dimensionality reduction as evidence. Worked example: Ahlqvist (2018). ✓
 - [ ] Variable handling critique — dichotomisation of continuous predictors, median splits lose 38-60% power, inflate type I error. Test case: Royston, Altman & Sauerbrei (2006). Reasoning-only agent, no code module needed. From Thomas Speidel's test cases.
 
 ## Packaging / infrastructure
