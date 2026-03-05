@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: bullshit-detector
-Version: 0.1.1
+Version: 0.2.0
 Summary: Statistical detection tools for screening published research
 Author-email: Matteo Niccoli <matteo@mycarta.ca>
 License: Apache-2.0

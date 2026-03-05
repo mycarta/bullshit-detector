@@ -10,10 +10,10 @@ A Python toolkit for systematically screening research papers for statistical re
 
 | Tier | What it checks | What you need | Time |
 |------|---------------|---------------|------|
-| **0 — Paper screening** | Journal legitimacy, retractions, author credentials | DOI, journal name | Minutes |
+| **0 — Paper screening** | Journal legitimacy, retractions, author credentials, ML explainability screening | DOI, journal name | Minutes |
 | **1 — Arithmetic** | p-value consistency, GRIM/GRIMMER tests | Reported statistics | Minutes |
-| **2 — Plausibility** | Spurious correlations, critical r, confidence intervals | Summary stats (r, n, k) | Minutes |
-| **3 — Data analysis** | Outlier leverage, distance correlation, reproducibility | Raw/digitized data | Hours |
+| **2 — Plausibility** | Spurious correlations, critical r, confidence intervals, cluster reification (unsupervised learning audit) | Summary stats (r, n, k) | Minutes |
+| **3 — Data analysis** | Outlier leverage, distance correlation, reproducibility, SHAP/XAI model interpretation audit | Raw/digitized data | Hours |
 
 ## Installation
 
