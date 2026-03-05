@@ -1,252 +1,310 @@
-# Unsupervised Learning Critique Skill
+# Unsupervised Learning Critique Skill (Reasoning Only)
 
-> **Purpose:** A reasoning framework for auditing papers that use clustering,
-> dimensionality reduction, or other unsupervised methods to identify structure
-> in data. No code module — this is a checklist for human or LLM reasoning.
->
-> **When to use:** Any paper that reports "groups", "subtypes", "clusters",
-> "communities", or "archetypes" derived from an algorithm rather than from
-> prior clinical, physical, or theoretical criteria.
->
-> **Origin:** Developed from Thomas Speidel's test cases, anchored to
-> Ahlqvist et al. (2018) as the canonical worked example.
+> No code module. This is a structured reasoning framework for the LLM.
+> Complements `spurious_correlation.md` (Tier 2) and `outlier_leverage.md`
+> (Tier 3) by catching methodological failures specific to clustering and
+> dimensionality reduction.
+
+## Purpose
+
+When a paper uses unsupervised methods (k-means, hierarchical clustering,
+PCA, t-SNE, UMAP, etc.) to discover "types," "subtypes," "groups," or
+"latent structure," the results are only meaningful if the method's
+assumptions match the data and the interpretation doesn't overstate what
+the algorithm found.
+
+The core danger: **cluster reification** — treating algorithm output as
+discovered natural kinds. Clustering algorithms always produce clusters.
+That doesn't mean the clusters are real.
+
+This skill file tells the LLM what to look for and what to flag.
 
 ---
 
-## The four checks
+## Cluster analysis audit checklist
 
-Work through these in order. Each targets a distinct failure mode. A paper
-can fail any one of them while passing the others — flag each separately.
+### 1. Why this algorithm?
 
----
-
-### 1. Cluster reification
-
-**The problem:** An algorithm partitions data into groups. The paper then
-treats those groups as real, pre-existing entities — subtypes of a disease,
-customer segments, geological facies — as if the algorithm *discovered*
-something that was there rather than *imposed* a partition on a continuous
-distribution.
+**The question:** Did the authors justify choosing their clustering method,
+or did they reach for k-means by default?
 
 **What to look for in the paper:**
-- Does the paper test whether the continuous distribution is actually
-  multimodal? A unimodal distribution clustered into k groups produces
-  k interpretable-looking clusters that mean nothing.
-- Is there a distributional test (Hartigan's dip test, Silverman bandwidth
-  test, mclust model comparison) showing that the data support discrete
-  groups rather than a continuum?
-- Are the cluster boundaries treated as sharp when the underlying variables
-  are continuous?
+- Is the choice of algorithm stated and justified?
+- Does the algorithm match the data type? k-means assumes continuous
+  variables with Euclidean distance. If the data includes categorical
+  variables, binary indicators, or mixed types, k-means is inappropriate.
+  k-prototypes or PAM (partitioning around medoids) should be used instead.
+- Does the algorithm match the expected cluster shape? k-means assumes
+  spherical clusters of roughly equal size. DBSCAN or Gaussian mixture
+  models handle non-spherical or unequal clusters.
 
 **Red flags:**
-- "We identified five distinct subtypes" — "distinct" is doing enormous work.
-  Was distinctness tested or assumed?
-- Clusters reported with means and standard deviations, no overlap shown.
-  Overlapping distributions can still be clustered; the overlap tells you
-  how distinct the groups really are.
-- Clinical or operational decisions tied to cluster membership without
-  uncertainty quantification. If a patient near the boundary of two clusters
-  gets a different treatment depending on cluster label, that's a problem.
-- No comparison to a simpler model. Does the k-cluster solution predict
-  outcomes better than a single continuous score on the most important
-  variable?
+- k-means used on mixed-type clinical data (continuous lab values +
+  categorical diagnoses + binary flags) without acknowledgment of the
+  mismatch.
+- No mention of alternative algorithms tried.
+- Algorithm chosen because it's "widely used" rather than because it
+  fits the data structure.
 
-**Green flags:**
-- Authors test for multimodality explicitly.
-- Confidence or uncertainty in cluster assignment reported (soft
-  clustering, posterior probabilities from a mixture model).
-- Authors explicitly state that clusters are operational summaries, not
-  discovered natural kinds.
 
-**Worked example — Ahlqvist et al. (2018):**
-Ahlqvist et al. applied k-means clustering (k=5) to six continuous variables
-(GADA positivity, age at diagnosis, BMI, HbA1c, HOMA2-B, HOMA2-IR) in
-8,980 Swedish patients and named the resulting groups as putative diabetes
-subtypes (SAID, SIDD, SIRD, MOD, MARD). The paper generated enormous
-clinical interest, yet the five k=5 centroids were never tested against
-k=4 or k=6, nor was multimodality in the six input variables demonstrated.
-Subsequent replication studies (e.g., Zaharia et al. 2019, Udler et al. 2019)
-found that the clusters were not stable across cohorts and did not map cleanly
-onto distinct biological mechanisms. The clusters were real as algorithmic
-outputs; whether they were real as disease entities remained contested.
+### 2. Centroids vs. medoids
 
----
-
-### 2. Centroid vs. medoid — does the representative patient exist?
-
-**The problem:** k-means minimises within-cluster sum of squared distances
-to the cluster *centroid* — the mean of each variable across cluster members.
-The centroid is a mathematical point that may not correspond to any actual
-observation. Interpreting the centroid as "the typical patient in this group"
-is only appropriate if the distribution within each cluster is approximately
-symmetric and unimodal. For binary or bounded variables (e.g., antibody
-positivity in Ahlqvist), a centroid value of 0.3 is not a real patient —
-it is an average of zeroes and ones.
+**The question:** Are cluster centres reported as actual observations, or
+as synthetic averages that may fall in empty space?
 
 **What to look for in the paper:**
-- Are cluster summaries reported as means? If any input variables are
-  binary or bounded, the centroid is not a real observation.
-- Does the paper present a "representative case" or "prototype patient"?
-  Is it an actual observation (medoid) or a constructed centroid?
-- Would k-medoids clustering (PAM — Partitioning Around Medoids) have
-  been more appropriate? It returns actual data points as cluster centres,
-  making the representative patient real.
+- Does the paper report cluster centroids (arithmetic means of each
+  variable within cluster)? If so, does any reported "typical member"
+  actually correspond to a real data point?
+- Were distances from each member to its cluster centre reported or
+  visualised? Without these, you cannot tell whether clusters are tight
+  groups or arbitrary partitions of a continuum.
+- If centroids fall in low-density or empty regions of the feature space,
+  the "typical" member of that cluster doesn't exist. The cluster label
+  is a statistical artefact, not a type.
 
 **Red flags:**
-- Binary input variables but means reported as cluster summaries. A cluster
-  with a mean GADA of 0.4 is a mix of antibody-positive and antibody-negative
-  patients — it is not a low-GADA subtype.
-- "Cluster 3 is characterised by high BMI and moderate insulin resistance" —
-  is this describing an actual patient or a centroid?
-- No uncertainty around cluster centres reported.
+- Cluster centres described as "profiles" or "phenotypes" without
+  confirming that any actual observation resembles the centroid.
+- No report of within-cluster dispersion (distances to centre, silhouette
+  widths, or spread on any dimension).
+- Centroid coordinates that are implausible composites — e.g., a cluster
+  "centre" with 0.6 on a binary variable, described as a type.
 
-**Green flags:**
-- k-medoids used, or medoids explicitly reported alongside centroids.
-- Cluster plots show actual data points, not just centroid markers.
-- Distribution of each variable within each cluster shown (violin plots,
-  boxplots) so the reader can judge whether the centroid is representative.
+**Computational checks (Tier 3, if data available):**
+- Recompute with PAM (k-medoids) and compare cluster assignments. If
+  >20% of members swap clusters, the centroid-based solution is unstable.
+- Compute silhouette widths for both k-means and k-medoids. If k-medoids
+  produces comparable or better silhouettes, report.
+- Check density at centroid locations — if centroids sit in low-density
+  regions, clusters are splitting a continuum, not recovering groups.
 
----
 
-### 3. Stability — would different choices produce the same clusters?
+### 3. How many clusters?
 
-**The problem:** Clustering results depend on: (a) the number of clusters k,
-(b) the initialisation seed (for k-means), (c) the distance metric, (d) the
-variables included, (e) the sample. A result that changes substantially under
-any of these perturbations is not a stable finding.
+**The question:** Was k chosen by evidence, or imposed?
 
 **What to look for in the paper:**
-- Is there a justification for the chosen k? Common internal criteria include
-  the elbow method (within-cluster sum of squares vs. k), silhouette scores,
-  gap statistic, or information criteria from mixture models (BIC/AIC from
-  mclust). Were multiple values of k tested?
-- Was stability under resampling evaluated? Bootstrap resampling with the
-  Jaccard similarity index (Hennig 2007) or consensus clustering are standard.
-  A cluster with Jaccard < 0.6 is considered unstable.
-- Was external validation performed? Do the clusters predict outcomes in a
-  held-out sample or a different cohort?
+- Did the authors use a data-driven method to select k (silhouette,
+  gap statistic, elbow method, BIC for mixture models)?
+- Did they report results for alternative values of k?
+- Is the chosen k suspiciously convenient — matching a prior hypothesis
+  or a clinical taxonomy the authors wanted to confirm?
 
 **Red flags:**
-- k chosen by visual inspection of a dendrogram or by clinical preference,
-  not by a data-driven criterion from the training set.
-- Single random seed used for k-means with no stability check.
-- No held-out set or external cohort validation.
-- "The clusters were replicated in a validation cohort" — but replication
-  was done by assigning new patients to the training-set centroids, not
-  by running clustering independently on the new cohort and checking that
-  the same structure emerged.
+- k stated as given with no justification ("We used k=5 clusters").
+- Elbow plot shown but the "elbow" is ambiguous and the authors chose
+  the value that supports their narrative.
+- Silhouette or gap statistic suggests k=2 but the paper reports k=5
+  because "clinically meaningful subtypes" were expected.
+- No sensitivity analysis: what happens at k±1?
 
-**Green flags:**
-- Multiple k values tested with an internal validity index, k chosen
-  at the elbow or maximum silhouette.
-- Bootstrap stability reported (Jaccard, cophenetic correlation, or
-  consensus clustering heatmap).
-- Independent cohort ran clustering separately and found consistent
-  structure (not just nearest-centroid assignment).
 
-**Worked example — Ahlqvist et al. (2018):**
-The original paper did not report stability analysis. Udler et al. (2019)
-subsequently showed that a genetic factor model (using GWAS data) partially
-supported the subtype concept, but with different boundaries. Zaharia et al.
-(2019) could not fully replicate the five-cluster structure in a German cohort.
-These are textbook failure modes of cluster reification without stability
-testing: the clusters were stable enough within the training cohort to look
-compelling, but not stable enough across cohorts to be treated as natural kinds.
+### 4. Cluster stability and reproducibility
 
----
-
-### 4. Dimensionality reduction as evidence
-
-**The problem:** Papers routinely show PCA, t-SNE, or UMAP plots with
-cluster labels overlaid to "demonstrate" that the clusters are visually
-distinct. This reasoning is circular and unreliable.
-
-- PCA is linear and will not reveal non-linear structure. Clusters that
-  look overlapping in PCA may be well-separated in higher dimensions and
-  vice versa.
-- t-SNE and UMAP *always* produce visually distinct blobs given enough
-  perplexity/neighbour tuning, even for random data. The visual separation
-  is partly a function of the algorithm parameters, not just the data.
-- If the cluster labels were derived from the same data shown in the plot,
-  the plot is not independent evidence of cluster structure — it is a
-  visualisation of the algorithm's own output.
+**The question:** Would different random seeds, different subsamples, or
+different distance metrics produce the same clusters?
 
 **What to look for in the paper:**
-- Is the dimensionality reduction used exploratorily (to visualise data
-  before clustering) or presentationally (to show clusters discovered
-  by a separate algorithm)?
-- If t-SNE/UMAP is used, are the perplexity/neighbour parameters reported?
-  Were multiple parameter values tried?
-- Is there any between-cluster overlap visible in the plot? Authors sometimes
-  select projection axes or parameters that maximise apparent separation.
+- Were clusters validated by bootstrap resampling, cross-validation,
+  or split-half analysis?
+- Were results reported for multiple random initializations (k-means
+  is initialization-dependent)?
+- Were results compared across different distance metrics?
 
 **Red flags:**
-- "The PCA/t-SNE/UMAP plot confirms five distinct clusters" — a projection
-  onto 2D is not confirmation. It is a visualisation subject to heavy
-  parameterisation choices.
-- UMAP or t-SNE plot shown but hyperparameters not reported.
-- The same data used to fit clusters and to produce the plot that "validates"
-  them.
-- Authors describe the 2D plot without mentioning that most variance is in
-  higher dimensions.
+- No stability analysis of any kind.
+- "We ran k-means 100 times and selected the solution with the lowest
+  within-cluster sum of squares" — this finds the best k-means solution,
+  not evidence that k-means is the right model.
+- Clusters validated only by showing that cluster membership correlates
+  with an outcome — this is circular if the outcome variables were
+  included in the clustering, and merely confirmatory if they weren't
+  (any partition of a dataset will show some outcome differences by
+  chance).
 
-**Green flags:**
-- Plot clearly labelled as exploratory or descriptive, not confirmatory.
-- Hyperparameters stated and at least one sensitivity check shown.
-- Quantitative cluster separation reported (e.g., between-cluster vs.
-  within-cluster variance ratio, silhouette scores) in addition to visual.
-- Dimensionality reduction applied to held-out data, not just training data.
+
+### 5. Cluster reification
+
+**The question:** Does the paper treat algorithm output as discovered
+natural kinds?
+
+This is the highest-value check in this skill file. Everything above
+feeds into it.
+
+**What to look for in the paper:**
+- Does the language escalate from "clusters" in Methods to "subtypes,"
+  "types," "distinct groups," or "phenotypes" in Discussion/Conclusions?
+- Are clusters given proper names (e.g., "severe insulin-resistant
+  diabetes," "mild age-related diabetes") that imply discrete biological
+  entities?
+- Does the paper propose clinical action based on cluster membership
+  (different treatments per subtype) without validating that cluster
+  membership is stable and predictive?
+
+**Red flags:**
+- Naming clusters as if they were diseases or conditions.
+- Proposing cluster-specific treatment pathways based on a single
+  clustering analysis with no replication.
+- Ignoring within-cluster heterogeneity — members near cluster
+  boundaries may be more similar to the neighbouring cluster than
+  to their own centroid.
+- No discussion of the continuum alternative: that the data may be
+  unimodal or multimodal but continuous, with no discrete types.
+
+**The question to always ask:** Would a density plot or mixture model
+show distinct modes, or is the algorithm imposing boundaries on a
+smooth distribution?
+
+
+### 6. Dimensionality reduction as evidence
+
+**The question:** When PCA, t-SNE, or UMAP is used to "visualise"
+clusters, does the visualisation actually support the claim?
+
+**What to look for in the paper:**
+- t-SNE and UMAP can make any dataset look clustered by tuning
+  perplexity/n_neighbors. Were hyperparameters reported and justified?
+- Were multiple perplexity/n_neighbors values shown? If one setting
+  shows separation and another doesn't, the evidence is weak.
+- Does PCA explain enough variance for the 2D projection to be
+  meaningful? If PC1 + PC2 capture only 25% of variance, the plot
+  is mostly noise.
+
+**Red flags:**
+- t-SNE or UMAP plot shown as primary evidence of "distinct clusters"
+  with no quantitative validation.
+- Perplexity or n_neighbors not reported.
+- Only the "best-looking" projection shown.
+- PCA biplot with low explained variance but confident cluster
+  interpretation.
 
 ---
 
-## Overall verdict framework
+## Worked example: Ahlqvist et al. (2018) — diabetes subtypes
 
-Assess each check independently, then combine:
+**Paper:** Ahlqvist, E., Storm, P., Käräjämäki, A., et al. (2018).
+"Novel subgroups of adult-onset diabetes and their association with
+outcomes: a data-driven cluster analysis of six variables."
+*The Lancet Diabetes & Endocrinology*, 6(5), 361–369.
 
-| Check | PASS | CAUTION | FLAG |
-|---|---|---|---|
-| Reification | Multimodality tested or soft clustering used | Clusters reported as discrete without explicit test | No distributional test; groups named as natural kinds |
-| Centroid/medoid | Medoids reported or all inputs continuous and symmetric | Means reported with bounded inputs, acknowledged | Binary inputs; centroids described as representative patients |
-| Stability | k justified, bootstrap stability reported, external validation | Some stability checks but incomplete | Single k, no seed sensitivity, in-sample validation only |
-| Dimensionality reduction | Used exploratorily with stated hyperparameters | Shown without hyperparameters | Described as evidence for cluster structure |
+**Claim:** Five reproducible subtypes of adult-onset diabetes, each with
+distinct progression patterns and complication risks. Named: SAID
+(severe autoimmune), SIDD (severe insulin-deficient), SIRD (severe
+insulin-resistant), MOD (mild obesity-related), MARD (mild age-related).
 
-**FLAG on any single check is sufficient to warrant escalation.** Note in
-audit which check failed and why. Multiple FLAGs indicate a paper where the
-claimed discovery structure is largely algorithmic artefact.
+**Audit using this checklist:**
+
+**Check 1 — Algorithm choice:** k-means on six continuous variables
+(GAD antibodies, HbA1c, BMI, age at diagnosis, HOMA2-B, HOMA2-IR).
+All continuous, so k-means is defensible on data-type grounds. However,
+some variables (GAD antibodies) have highly skewed distributions with
+many zeros — k-means assumes roughly spherical clusters, and a spike
+at zero plus a long right tail is not spherical in that dimension.
+**Verdict: CAUTION.**
+
+**Check 2 — Centroids vs. medoids:** The paper reports cluster centroids
+(mean values per cluster). No distances from members to centres are
+reported. No density plots showing whether members cluster tightly
+around centres or spread across the full range. The centroid of the
+SIRD cluster, for example, has specific mean values of HOMA2-IR and
+HOMA2-B — but how many actual patients in SIRD closely resemble that
+profile? Not reported.
+**Verdict: FLAG.** This is the core issue Thomas Speidel identified.
+
+**Check 3 — Number of clusters:** The paper reports using hierarchical
+clustering to select k, then k-means for final assignment. k=5 chosen
+based on visual inspection of dendrograms. No gap statistic, no BIC,
+no systematic comparison of k=3,4,5,6,7. The five subtypes map
+conveniently onto a clinical narrative.
+**Verdict: CAUTION.**
+
+**Check 4 — Stability:** The paper replicates clusters in three
+independent Scandinavian cohorts — this is genuine external validation
+and a strength. However, no bootstrap stability analysis within cohorts,
+no sensitivity to initialization, and importantly: replication was
+assessed by whether cluster-level mean profiles matched, not whether
+individual patients assigned consistently.
+**Verdict: MIXED.** External replication is real. Individual assignment
+stability unknown.
+
+**Check 5 — Reification:** The paper names the five clusters as
+"subtypes" and proposes subtype-specific treatment implications.
+Subsequent commentary (e.g., Udler, 2019) noted that continuous
+variation across clusters is at least as plausible as discrete types.
+Patients near cluster boundaries — who may be the most clinically
+ambiguous and thus most in need of guidance — get forced into a
+category that may not describe them well.
+**Verdict: FLAG.** Language escalation from "clusters" to "subtypes"
+to "diseases" occurred in the paper and accelerated in the subsequent
+literature. The paper itself is careful in places but the framing
+invites reification.
+
+**Overall verdict: REVIEW.** The statistical work is competent and the
+replication across cohorts is genuine. But the interpretation overstates
+what clustering can show. The method finds clusters — it does not prove
+types. The absence of within-cluster dispersion data (Check 2) and the
+reification of labels (Check 5) are the primary concerns.
 
 ---
 
-## Routing
+## How to use this file
 
-- Cluster instability + many input features → `spurious.P_spurious()` (many
-  variables, small N inflates chance of finding apparent structure)
-- Clusters used to predict an outcome → `power.power_from_paper()` (underpowered
-  subgroup analyses within clusters are common)
-- Clusters used in a regression → `leverage.influence_plot()` (extreme
-  observations can anchor a centroid)
-- Causal claims attached to cluster membership → `causal_consistency.md`
+When auditing a paper that uses unsupervised methods:
+
+1. **Identify the method** — k-means, hierarchical, DBSCAN, GMM, PCA,
+   t-SNE, UMAP, or something else.
+2. **Work through checks 1–6 in order.** Not all will apply to every
+   paper. Skip checks that don't match the method used.
+3. **Pay special attention to Check 2 (centroids vs. medoids) and
+   Check 5 (reification).** These are the two failures most likely to
+   survive peer review because they are interpretive, not arithmetic.
+4. **Language escalation is the tell.** Track what the paper calls its
+   groups across sections: "clusters" in Methods → "subtypes" in
+   Results → "types" or "phenotypes" in Discussion → "diseases" in
+   Conclusions. Each escalation is an unsupported inferential leap.
+
+This skill file is reasoning-only. If raw data is available, the
+computational checks under Check 2 can be run using standard Python
+(scikit-learn's `KMedoids` from sklearn_extra, `silhouette_score`
+from sklearn.metrics, scipy hierarchical clustering). These are not
+wrapped in the bullshit-detector package because they are standard
+library calls, not custom detection logic.
+
+---
+
+## Not covered by this skill file
+
+This skill file addresses clustering and dimensionality reduction.
+It does **not** cover:
+
+- **Variable dichotomisation** — median splits of continuous predictors,
+  arbitrary cutpoints. See `variable_handling_critique.md` (planned).
+- **Supervised learning diagnostics** — overfitting, train/test leakage,
+  feature importance. See `outlier_leverage.md` (SHAP section).
+- **Time-series clustering** — DTW distance, regime detection. Not yet
+  addressed in any skill file.
+- **Network/graph clustering** — community detection, modularity. Not
+  yet addressed.
+- **Latent class analysis / mixture models** — model-based clustering.
+  Shares some failure modes with k-means (reification, k selection) but
+  has its own assumptions (distributional forms). Partially covered by
+  Checks 3 and 5 above.
 
 ---
 
 ## References
 
-- Ahlqvist et al. (2018), "Novel subgroups of adult-onset diabetes and
-  their association with outcomes: a data-driven cluster analysis of six
-  variables", *The Lancet Diabetes & Endocrinology*, 6(5), 361–369.
-  https://doi.org/10.1016/S2213-8587(18)30051-2
-- Hennig (2007), "Cluster-wise assessment of cluster stability",
-  *Computational Statistics & Data Analysis*, 52(1), 258–271.
-- Kaufman & Rousseeuw (1990), *Finding Groups in Data: An Introduction
-  to Cluster Analysis*, Wiley. (k-medoids / PAM)
-- Udler et al. (2019), "Type 2 diabetes genetic loci informed by
-  multi-trait associations point to disease mechanisms and subtypes",
-  *PLOS Genetics*, 14(9), e1007654.
-- Zaharia et al. (2019), "High risk of failure of the novel subgroups of
-  type 2 diabetes in an external cohort", *Annals of Internal Medicine*,
-  170(5), 360–361.
-- Wattenberg, Viégas & Johnson (2016), "How to use t-SNE effectively",
-  *Distill*. https://doi.org/10.23915/distill.00002
-  (t-SNE parameter sensitivity)
-- McInnes, Healy & Melville (2018), "UMAP: Uniform Manifold Approximation
-  and Projection for Dimension Reduction", arXiv:1802.03426.
-  (UMAP parameter sensitivity)
+- Ahlqvist, E., Storm, P., Käräjämäki, A., et al. (2018). "Novel
+  subgroups of adult-onset diabetes and their association with outcomes:
+  a data-driven cluster analysis of six variables." *The Lancet Diabetes
+  & Endocrinology*, 6(5), 361–369.
+- Udler, M.S. (2019). "Type 2 Diabetes: Multiple Genes, Multiple
+  Diseases." *Current Diabetes Reports*, 19, 55.
+- Hennig, C. (2015). "What are the true clusters?" *Pattern Recognition
+  Letters*, 64, 53–62.
+- von Luxburg, U. (2010). "Clustering Stability: An Overview."
+  *Foundations and Trends in Machine Learning*, 2(3), 235–274.
+- Royston, P., Altman, D.G. & Sauerbrei, W. (2006). "Dichotomizing
+  continuous predictors in multiple regression: a bad idea." *Statistics
+  in Medicine*, 25(1), 127–141. (Cross-reference for variable_handling_critique.md.)
