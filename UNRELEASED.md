@@ -1,7 +1,7 @@
 # Unreleased Changes
 
 _Current PyPI version: 0.1.1_
-_Last updated: 3 March 2026 (Session 12)_
+_Last updated: 5 March 2026 (Session 14)_
 
 ---
 
@@ -11,12 +11,12 @@ Source files on `P:\Bullshit detector\` and `/mnt/user-data/outputs/`.
 
 - [x] `skills/outlier_leverage.md` — SHAP/XAI audit section ✓
 - [x] `paper_screening.md` — ML explainability screening note ✓
-- [ ] All code-backed skill files — add "Not covered" sections declaring blind spots. Copilot prompt ready (see Session 12 transcript). Each agent's scope boundary for SLM architecture.
+- [x] All code-backed skill files — add "Not covered" sections declaring blind spots ✓
 
 ## Skill files to fill (currently partial or placeholder)
 
-- [ ] `skills/spurious_correlation.md` — 20 lines, needs Kalkomey/Hunt worked examples
-- [ ] `skills/power_analysis.md` — 20 lines, needs Button et al. (2013) worked example
+- [x] `skills/spurious_correlation.md` — expanded with Kalkomey tables, Hunt worked example, red flags, "not covered" section ✓
+- [x] `skills/power_analysis.md` — expanded with Button et al., Speidel geoscience, SD/SE trap worked examples ✓
 - [ ] `skills/redundancy_analysis.md` — 5 lines, placeholder, needs Speidel methodology writeup
 - [ ] `skills/reproducibility_challenge.md` — 5 lines, placeholder, needs Notebook D/E methodology writeup
 

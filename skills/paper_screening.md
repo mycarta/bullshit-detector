@@ -89,6 +89,32 @@ covered in `outlier_leverage.md` (SHAP audit section).
   in audit: "ML predictions reported without interpretability analysis.
   Cannot assess whether model relies on physically plausible features."
 
+## What Tier 0 screening does NOT catch
+
+Passing Tier 0 means the paper is published in a non-predatory journal,
+has not been retracted, and the authors have verifiable credentials. It
+does NOT mean the paper is good. Specifically:
+
+- **Methodological flaws within a legitimate journal.** Nature, PNAS, and
+  The Lancet have all published deeply flawed studies. Journal legitimacy
+  is necessary but not sufficient.
+- **Statistical errors.** Tier 0 does not check any numbers. A paper with
+  impossible means, fabricated p-values, or 10% power sails through.
+  Route to Tier 1 and Tier 2.
+- **Salami slicing / redundant publication.** The same dataset published
+  as multiple papers with minor variations. Requires cross-referencing
+  author publication lists, not just checking one paper.
+- **Undisclosed conflicts of interest.** The screening checks declared
+  COI and funding sources. If the COI is not declared, Tier 0 cannot
+  find it. Look for industry affiliations in author addresses and
+  acknowledgments.
+- **Ghost authorship.** OpenAlex shows who is listed. It cannot detect
+  who should be listed but isn't, or who is listed but didn't contribute.
+- **Predatory journal gray areas.** Binary lists (DOAJ yes/no) miss
+  journals that are technically indexed but have negligible review
+  standards. If in doubt, check acceptance rates and editorial board
+  composition manually.
+
 ## References
 
 - Abalkina (2023), identification of papers offered for sale by paper mills
