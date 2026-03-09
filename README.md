@@ -65,6 +65,7 @@ This project stands on the shoulders of:
 
 - **Carl T. Bergstrom & Jevin D. West** — *Calling Bullshit: The Art of Skepticism in a Data-Driven World* (Random House, 2020) and their [University of Washington course](https://callingbullshit.org/). The paper-level screening module (Tier 0) directly implements their legitimacy framework.
 - **Harry Frankfurt** — *On Bullshit* (Princeton University Press, 2005). Established the philosophical foundation.
+* **Lawrence Weinstein & John A. Adam** — *Guesstimation: Solving the World's Problems on the Back of a Cocktail Napkin* (Princeton University Press, 2008) and *Guesstimation 2.0: Solving Today's Problems on the Back of a Cocktail Napkin* (Princeton University Press, 2012). Inspired the Fermi estimation sanity checks.
 - **C.T. Kalkomey** — "Potential risks when using seismic attributes as predictors of reservoir properties" (*The Leading Edge*, 1997). The spurious correlation probability formula.
 - **N.J.L. Brown & J.A.J. Heathers** — "The GRIM Test" (*SPPS*, 2017). Arithmetic consistency checking for means.
 - **Aurélien Allard** — "Analytic-GRIMMER" (2018). Extended GRIM to standard deviations. The Python port in this package is the first on PyPI.
