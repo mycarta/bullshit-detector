@@ -42,6 +42,7 @@ Source files on `P:\Bullshit detector\` and `/mnt/user-data/outputs/`.
 ## README updates
 
 - [ ] Add SHAP/XAI mention to capabilities list after skill file edit lands
+- [ ] Curated expert list as skill file training data — Map domain experts to failure modes (Kalkomey → multiple comparisons, Harrell → CI misinterpretation, Gelman → forking paths, Simmons & Simonsohn → p-hacking/researcher degrees of freedom, Bergstrom & West → taxonomy of BS, Barnes → attribute redundancy). Use their published critiques to enrich skill files. Thomas Speidel suggestion. Target: v0.3.0.
 
 ---
 
