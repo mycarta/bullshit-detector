@@ -41,7 +41,7 @@ Source files on `P:\Bullshit detector\` and `/mnt/user-data/outputs/`.
 
 ## README updates
 
-- [ ] Add SHAP/XAI mention to capabilities list after skill file edit lands
+- [x] Add SHAP/XAI mention to capabilities list after skill file edit lands ✓
 - [ ] Curated expert list as skill file training data — Map domain experts to failure modes (Kalkomey → multiple comparisons, Harrell → CI misinterpretation, Gelman → forking paths, Simmons & Simonsohn → p-hacking/researcher degrees of freedom, Bergstrom & West → taxonomy of BS, Barnes → attribute redundancy). Use their published critiques to enrich skill files. Thomas Speidel suggestion. Target: v0.3.0.
 
 ---
@@ -78,3 +78,4 @@ These live here as reminders but don't block 0.2.0:
 - Evaluation against Thomas Speidel's 8 test papers
 - Blog posts: "Inverting Mill's Methods", "bullshit-detector launch post", Fermi sanity skill, "Distributed Bullshit Detection: Small Models as Specialized Auditors"
 - Announce: LinkedIn, Software Underground Mattermost, r/Python
+- Three paper audits added to `audits/` directory (Carney, Wansink, ORBITA)

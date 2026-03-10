@@ -73,6 +73,14 @@ This project stands on the shoulders of:
 - **Thomas Speidel** — GeoConvention 2018 R notebook. Variable selection methods (redundancy analysis, LASSO, sparse PCA, power analysis) on the Hunt dataset, complementing Niccoli's Python implementations. Inspired the redundancy and power modules.
 - **Michèle Nuijten et al.** — statcheck (*Behavioral Research Methods*, 2016). P-value recomputation methodology.
 
+## Paper audits
+
+The `audits/` directory contains worked examples of the full framework applied to real papers with known statistical issues:
+
+- **Carney, Cuddy & Yap (2010)** — Power posing. Underpowered, multiple uncorrected outcomes, implausible effect sizes. Verdict: REVIEW.
+- **Wansink et al. (2014–2016)** — Pizza buffet papers. Impossible descriptive statistics caught by GRIMMER. Verdict: REJECT.
+- **ORBITA / Al-Lamee et al. (2018)** — PCI for stable angina. Adequately powered for design target, but CI compatible with meaningful benefit. Widely over-interpreted as "PCI doesn't work." Verdict: CAUTION.
+
 ## For AI assistants
 
 The `skills/` directory contains detection heuristics and decision trees for each module. If you're a coding assistant (Copilot, Claude Code, etc.), read `skills/OVERVIEW.md` first.
