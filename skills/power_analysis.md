@@ -314,9 +314,7 @@ check the units.
 1. **No power analysis reported.** Compute it yourself from the
    reported n and effect size.
 
-2. **Post-hoc power analysis.** "Observed power" after the study is
-   circular -- a 1-to-1 function of the p-value. Flag if used to
-   justify non-significant results.
+2. **Post-hoc power analysis.** Computing power after the fact using the observed effect size is circular and uninformative — observed power is a 1-to-1 function of the p-value. Every negative trial has a small observed effect, so every negative trial will appear underpowered. When assessing whether a trial was adequately designed, use the design-stage assumptions (the expected effect size and SD that informed the sample size calculation), not the observed estimates. Use the observed effect only to answer "could this trial have detected what it found?" — and label it clearly as a post-hoc calculation, not a design assessment.
 
 3. **n < 20 per group with significant results.** At n=20, only large
    effects (d>=0.8) have adequate power. Smaller effects reported as
